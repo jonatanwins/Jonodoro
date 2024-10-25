@@ -17,7 +17,7 @@ class TimerApp:
         self.label.pack(pady=20)
 
         self.start_button = tk.Button(
-            master, text="Start Work", command=self.start_timer
+            master, text="Start Work", command=self.start_or_end_timer
         )
         self.start_button.pack(pady=10)
 
@@ -32,6 +32,12 @@ class TimerApp:
         self.fraction_entry = tk.Entry(master)
         self.fraction_entry.insert(0, "1/3")
         self.fraction_entry.pack(pady=5)
+
+    def start_or_end_timer(self):
+        if self.break_timer_running:
+            self.end_break()
+        else:
+            self.start_timer()
 
     def start_timer(self):
         self.start_time = time.time()
@@ -74,13 +80,17 @@ class TimerApp:
             break_time = elapsed_time * fraction
             self.break_end_time = time.time() + break_time
             self.break_timer_running = True
-            self.start_button.config(state=tk.DISABLED)
+            self.start_button.config(state=tk.NORMAL, text="End Break")
             self.update_timer()
         except:
             messagebox.showerror(
                 "Error", "Invalid fraction. Please enter a valid fraction (e.g., 1/3)"
             )
-            self.start_button.config(state=tk.NORMAL)
+            self.start_button.config(state=tk.NORMAL, text="Start Work")
+
+    def end_break(self):
+        self.break_timer_running = False
+        self.start_timer()
 
 
 root = tk.Tk()
