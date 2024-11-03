@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
 import time
+import matplotlib.pyplot as plt
+from datetime import datetime
 
 
 class TimerApp:
@@ -12,6 +14,8 @@ class TimerApp:
         self.timer_running = False
         self.break_timer_running = False
         self.break_end_time = None
+        # Store tuples of (work_time, break_time)
+        self.sessions = []
 
         self.label = tk.Label(master, text="00:00:00", font=("Arial", 24))
         self.label.pack(pady=20)
@@ -25,6 +29,11 @@ class TimerApp:
             master, text="Stop Work", command=self.stop_timer, state=tk.DISABLED
         )
         self.stop_button.pack(pady=10)
+
+        self.show_graph_button = tk.Button(
+            master, text="Show Sessions Graph", command=self.show_graph
+        )
+        self.show_graph_button.pack(pady=10)
 
         self.fraction_label = tk.Label(master, text="Break fraction (e.g., 1/3):")
         self.fraction_label.pack(pady=5)
@@ -51,6 +60,7 @@ class TimerApp:
         if self.timer_running:
             self.timer_running = False
             elapsed_time = time.time() - self.start_time
+            self.current_work_time = elapsed_time  # Store work time for this session
             self.start_button.config(state=tk.NORMAL, text="Start Work")
             self.stop_button.config(state=tk.DISABLED)
             self.start_break(elapsed_time)
@@ -70,6 +80,8 @@ class TimerApp:
             else:
                 self.break_timer_running = False
                 self.start_button.config(state=tk.NORMAL, text="Start Work")
+                # Save session when break is complete
+                self.sessions.append((self.current_work_time, self.current_break_time))
                 messagebox.showinfo(
                     "Break Finished", "Break time is over. Ready to start working?"
                 )
@@ -78,6 +90,7 @@ class TimerApp:
         try:
             fraction = eval(self.fraction_entry.get())
             break_time = elapsed_time * fraction
+            self.current_break_time = break_time  # Store break time for this session
             self.break_end_time = time.time() + break_time
             self.break_timer_running = True
             self.start_button.config(state=tk.NORMAL, text="End Break")
@@ -89,8 +102,40 @@ class TimerApp:
             self.start_button.config(state=tk.NORMAL, text="Start Work")
 
     def end_break(self):
+        remaining_break_time = self.break_end_time - time.time()
+        # Adjust break time if ended early
+        self.current_break_time -= remaining_break_time
+        # Save session when break is ended early
+        self.sessions.append((self.current_work_time, self.current_break_time))
         self.break_timer_running = False
         self.start_timer()
+
+    def show_graph(self):
+        if not self.sessions:
+            messagebox.showinfo("No Data", "No sessions recorded yet!")
+            return
+            
+        work_times = [session[0]/60 for session in self.sessions]  # Convert to minutes
+        break_times = [session[1]/60 for session in self.sessions]  # Convert to minutes
+        
+        plt.figure(figsize=(10, 6))
+        
+        # Create bar positions
+        positions = range(len(self.sessions))
+        
+        # Create stacked bar chart with new colors
+        plt.bar(positions, work_times, label='Work Time', color='#FF968A')  # Pastel light red
+        plt.bar(positions, break_times, bottom=work_times, label='Break Time', color='#A2E1DB')  # Pastel light blue
+        
+        plt.title('Work and Break Sessions')
+        plt.xlabel('Session Number')
+        plt.ylabel('Duration (minutes)')
+        plt.legend()
+        
+        # Set x-axis ticks to show session numbers starting from 1
+        plt.xticks(positions, [f'Session {i+1}' for i in positions])
+        plt.tight_layout()
+        plt.show()
 
 
 root = tk.Tk()
