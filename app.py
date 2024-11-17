@@ -17,6 +17,9 @@ class TimerApp:
         # Store tuples of (work_time, break_time)
         self.sessions = []
 
+        # Bind spacebar to start/stop
+        master.bind('<space>', lambda e: self.handle_spacebar())
+
         self.label = tk.Label(master, text="00:00:00", font=("Arial", 24))
         self.label.pack(pady=20)
 
@@ -41,6 +44,14 @@ class TimerApp:
         self.fraction_entry = tk.Entry(master)
         self.fraction_entry.insert(0, "1/3")
         self.fraction_entry.pack(pady=5)
+
+    def handle_spacebar(self):
+        if self.timer_running:
+            self.stop_timer()
+        elif self.break_timer_running:
+            self.end_break()
+        else:
+            self.start_timer()
 
     def start_or_end_timer(self):
         if self.break_timer_running:
